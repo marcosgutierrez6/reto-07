@@ -1,0 +1,60 @@
+# TODOS los umbrales del sistema. Se ajustan desde la app (pestaña Calibración) o a mano.
+# La cámara cenital solo ve la HUELLA (ancho x largo en tetones): ladrillo y placa con la misma huella son el mismo tipo.
+# Clases = colección completa: "<menor>x<mayor> <color>". Cualquier otra combinación -> DESCONOCIDO (con motivo).
+clases:
+  - 2x2 amarillo
+  - 2x2 marron
+  - 2x2 negro
+  - 2x2 gris
+  - 2x3 rojo
+  - 2x3 gris
+  - 2x4 azul
+  - 2x4 gris
+  - 2x6 rojo
+  - 2x6 marron
+  - 2x6 gris
+  - 1x6 rojo
+  - 1x6 gris
+  - 2x8 negro
+unidades: {2x4 azul: 2}      # piezas físicas por clase (por defecto 1): para decir qué FALTA en la escena
+tipos: [1x6, 2x2, 2x3, 2x4, 2x6, 2x8]   # tipos permitidos (1x3 blanca = intrusa -> DESCONOCIDO)
+
+area_cm: 40            # distancia (cm) entre centros de marcadores vecinos
+ancho_imagen_cm: 48.5    # sin marcadores: cm que abarca la foto en su lado LARGO (cámara fija). Da igual la resolución: JPG, PNG o HEIC
+blur: 5                # kernel gaussiano
+clahe: false           # CLAHE en canal V
+morfologia: 5          # kernel de apertura (quita ruido)
+cierre: 7              # kernel de cierre (une tetones/brillos sin partir la pieza; rellena huecos)
+tapete_hsv: {lo: [35, 40, 40], hi: [85, 255, 255]}        # verde del fieltro
+marcador_hsv: {lo: [140, 100, 50], hi: [165, 255, 255]}   # marcadores magenta
+area_min_cm2: 0.3      # por debajo: ruido
+area_max_cm2: 14.0     # por encima: no es una pieza (una 2x8 mide ~10 cm2)
+oscuro_ratio: 0.62     # V por debajo de este % del fondo local = pieza oscura (el tapete casi nunca baja de 0.66)
+erosion: 3             # erosion de la mascara antes de medir color
+especular: {v_min: 250, s_max: 20}   # pixeles de brillo especular a ignorar
+
+# Árbol de TIPO: el ancho y el largo (en tetones de teton_cm) deben ser casi enteros y el tipo estar en `tipos`.
+tipo:
+  teton_cm: 0.8        # paso entre tetones
+  tol_tetones: 0.35    # desviación máxima al entero (0.5 = imposible de decidir)
+  k_perspectiva: 0.30  # tetones que se restan por cada unidad de distancia al centro de la foto (paredes de la pieza vistas de lado)
+  rect_min: 0.8        # rectangularidad mínima (piezas pegadas/sombras fallan)
+  d_tapete_min: 25     # ángulo (°) mínimo en el plano (a,b) de Lab respecto al tapete; por debajo y sin forma válida = sombra
+
+# Árbol de COLOR (H de OpenCV 0-179). Se evalúa EN ORDEN; gana la primera regla cuyas condiciones se cumplen todas.
+#   1) V/S: negro / blanco (intrusa) / gris   2) tono: amarillo / azul / rojo-marrón   3) rojo frente a marrón por V y S.
+# Los valores son de PARTIDA: calibra con tus fotos (S vs V y V vs H en la pestaña Calibración).
+color:
+  negro:    {v_max: 90}
+  blanco:   {s_max: 8, v_min: 245}                   # la 1x3 blanca intrusa. ¡Calíbralo con su foto! (tus grises: S 10-23, V 213-232)
+  gris:     {s_max: 45}                              # gris claro LEGO: S baja y V medio-alto
+  amarillo: {h: [[18, 35]], s_min: 150}
+  azul:     {h: [[100, 130]], s_min: 120}
+  rojo:     {h: [[0, 10], [170, 180]], s_min: 60, v_min: 200}    # rojo: tono rojo con V alto (S baja si el brillo lo lava: s_min 60)
+  marron:   {h: [[0, 25], [170, 180]], s_min: 50, v_max: 190}    # mismo tono pero V claramente menor (el marron real es oscuro, V<=170)
+
+# --- Interfaz / avisos ---
+ipcam_url: ""            # última URL de cámara IP usada (http://IP:PUERTO/video)
+resolucion_min_px: 10    # píxeles mínimos para dar por buena la resolución (un tetón)
+margen_fuera_cm: 3       # franja fuera del cuadrado de marcadores donde se buscan objetos
+tol_emparejar_cm: 1.5    # distancia máx. entre una pieza etiquetada y la detectada

@@ -1,0 +1,8 @@
+*.bak*
+__pycache__/
+.DS_Store
+.venv/
+results/
+dataset/*/*.png
+dataset/*/*.jpg
+dataset/*/*.HEIC
